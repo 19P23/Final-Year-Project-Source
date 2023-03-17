@@ -14,7 +14,7 @@ class Rule:
     
 def powerset(s):
     return list(chain.from_iterable(combinations(s, r) for r in range(1, len(s) + 1)))
-def load_transactions(path_to_data, order):
+'''def load_transactions(path_to_data, order):
     transactions = []
     with open(path_to_data, 'r') as fid:
         for lines in fid:
@@ -22,7 +22,20 @@ def load_transactions(path_to_data, order):
             _t = list(np.unique(str_line))
             _t.sort(key = lambda x: order.index(x))
             transactions.append(_t)
-    return transactions
+    return transactions''' 
+# change done in the below function
+def load_transactions(path_to_data, order):
+    transactions = []
+    outcomes = set()
+    with open(path_to_data, 'r') as fid:
+        for lines in fid:
+            str_line = list(lines.strip().split(','))
+            _t = list(np.unique(str_line))
+            _t.sort(key = lambda x: order.index(x))
+            transactions.append(_t)
+            outcomes.add(_t[0])
+    return transactions, len(outcomes)
+
 
 def count_occurences(itemset, transactions):
     count = 0
@@ -74,7 +87,9 @@ def get_frequent(itemsets, transactions, n_itemsets, order):
     # A set that is used to track whether an itemset has already been added to frequent_itemsets
     added = set()
     num_itemsets_added = 0
-    while num_itemsets_added < n_itemsets and len(counts) != 0:
+    #changes done here 
+    c=(float)(len(support_counts_for_items)/len(transactions)) # c=number of class labels
+    while num_itemsets_added < n_itemsets/c and len(counts) != 0:  # n_itemsets/c  c- number of class labels
         count = heapq.heappop(counts)
         # Iterate through all the itemsets
         for item, supp in support_counts_for_items:
@@ -107,7 +122,9 @@ def get_confident_rules(L, n_rules, transactions):
             # print(X_S)
             sup_x = count_occurences(X, transactions)
             sup_x_s = count_occurences(X_S, transactions)
-            conf = sup_x/count_occurences(S, transactions)
+            sup_x_y = count_occurences(X.union(S), transactions)
+            conf = abs((sup_x / count_occurences(S, transactions)) - (sup_x_y / count_occurences(S, transactions)))  # relative confidence changes done here
+            #conf = sup_x/count_occurences(S, transactions)  # replace the formula with relative confidence one
             lift = sup_x/(sup_x_s/num_trans)
             rules.append(Rule(X, S, X_S, sup_x, conf, lift))
     rules.sort(key=lambda x: x.conf, reverse=True)
